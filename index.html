@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Staircase Sums</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0; --surface:#fff; --surface2:#f0ede8; --border:#d8d4cc;
+  --text:#1a1814; --text2:#5a5650; --text3:#9a958e;
+  --blue:#2c5f9e; --red:#c0392b; --green:#1a7a4a; --orange:#e08020;
+  --font:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'DM Mono',ui-monospace,monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);
+  min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5;padding:24px 16px}
+.app{max-width:920px;margin:0 auto}
+
+.head{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.head-ic{width:42px;height:42px;border-radius:10px;background:var(--surface2);
+  border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:600;color:var(--text2);font-size:18px;flex-shrink:0}
+.lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:3px}
+.title{font-size:22px;font-weight:700;color:var(--text);line-height:1.2}
+
+.card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:22px;margin-bottom:16px}
+.card-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:14px}
+
+.intro{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:18px}
+.intro strong{color:var(--text)}
+
+/* Sliders */
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.slider-row label{flex:0 0 88px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.slider-row input[type=range]{flex:1;accent-color:var(--blue);height:5px}
+.slider-row .val{flex:0 0 50px;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text);text-align:right}
+
+/* Stage = the SVG container that morphs */
+.stage{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;
+  padding:20px;min-height:260px;display:flex;align-items:center;justify-content:center;overflow-x:auto}
+.stage svg{display:block;max-width:100%;height:auto}
+
+/* Toggle for morph */
+.morph-toggle{display:flex;gap:0;background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:8px;padding:3px;margin:14px auto 0;width:fit-content}
+.morph-toggle button{padding:7px 14px;border:none;background:transparent;border-radius:6px;
+  font-family:var(--font);font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s}
+.morph-toggle button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* Sum display */
+.sum-display{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px;
+  padding:14px 18px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;
+  font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text);overflow-x:auto;white-space:nowrap}
+.sum-display .eq{color:var(--text3);margin:0 4px}
+.sum-display .total{font-size:26px;font-weight:700;color:var(--blue)}
+
+/* Number ladder */
+.ladder{margin-top:18px}
+.ladder-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.ladder-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(46px, 1fr));gap:5px}
+.lad-cell{aspect-ratio:1;border-radius:7px;background:var(--surface2);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:13px;
+  font-weight:600;color:var(--text2);cursor:pointer;transition:all .12s;position:relative}
+.lad-cell:hover{border-color:var(--text3);color:var(--text)}
+.lad-cell.cur-sum{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700;
+  box-shadow:0 2px 8px rgba(44,95,158,.3)}
+.lad-cell.pow2{background:#fff;color:var(--red);border-color:#e6c5bf}
+.lad-cell.pow2::after{content:'';position:absolute;inset:0;border-radius:7px;
+  background:repeating-linear-gradient(45deg,transparent 0 4px,rgba(192,57,43,.08) 4px 8px);pointer-events:none}
+.lad-cell.cur-sum.pow2{background:var(--red);color:#fff;border-color:var(--red)}
+
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text2);margin-top:10px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px}
+.swatch{width:14px;height:14px;border-radius:4px;border:1.5px solid}
+.swatch.cur{background:var(--blue);border-color:var(--blue)}
+.swatch.pow{background:#fff;border-color:#e6c5bf;background:repeating-linear-gradient(45deg,#fff 0 4px,rgba(192,57,43,.15) 4px 8px)}
+
+.insight{background:#fff8f0;border:1px solid #f0d8c0;border-left:3px solid var(--orange);
+  border-radius:0 8px 8px 0;padding:12px 15px;font-size:13px;color:#6b4400;
+  line-height:1.65;margin-top:14px}
+.insight strong{color:#4a2e00;font-weight:700}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div class="head-ic">5.1</div>
+    <div>
+      <div class="lbl">Chapter 5 · Section 5.1</div>
+      <div class="title">Staircase Sums</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="intro">
+      Take a few consecutive numbers like 3 + 4 + 5 + 6 and stack them as a staircase of dots. The staircase has a hidden secret: <strong>you can always rearrange it into a rectangle</strong>, and that rectangle's area is the sum. Slide to change the start and length — watch the staircase, the rectangle, and the running total all move together.
+    </p>
+
+    <div class="slider-row">
+      <label>Start at</label>
+      <input type="range" id="start" min="1" max="20" value="3">
+      <span class="val" id="start-val">3</span>
+    </div>
+    <div class="slider-row">
+      <label>Length</label>
+      <input type="range" id="length" min="2" max="10" value="4">
+      <span class="val" id="length-val">4</span>
+    </div>
+
+    <div class="stage" id="stage"></div>
+
+    <div class="morph-toggle">
+      <button class="active" data-mode="stair">Staircase</button>
+      <button data-mode="rect">Rectangle</button>
+    </div>
+
+    <div class="sum-display" id="sum-display"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Which numbers can this staircase reach?</div>
+    <p class="intro" style="margin-bottom:14px">
+      Click any number below to load the smallest staircase that sums to it. Numbers with no staircase are <strong style="color:var(--red)">powers of 2</strong> — the only stubborn ones.
+    </p>
+    <div class="ladder">
+      <div class="ladder-grid" id="ladder"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="swatch cur"></span> current sum</div>
+        <div class="legend-item"><span class="swatch pow"></span> power of 2 (no staircase exists)</div>
+      </div>
+    </div>
+    <div class="insight">
+      <strong>Why powers of 2 fail:</strong> a staircase of length L starting at a sums to L·a + L(L−1)/2. If you double the sum: 2N = L·(2a + L − 1). One of L and (2a + L − 1) is always odd, but powers of 2 have no odd factor bigger than 1 — so no valid L exists.
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { start: 3, length: 4, mode: 'stair' };
+
+const startInput = document.getElementById('start');
+const lengthInput = document.getElementById('length');
+const startVal = document.getElementById('start-val');
+const lengthVal = document.getElementById('length-val');
+
+startInput.addEventListener('input', e => { state.start = +e.target.value; render(); });
+lengthInput.addEventListener('input', e => { state.length = +e.target.value; render(); });
+
+document.querySelectorAll('.morph-toggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.morph-toggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.mode = b.dataset.mode;
+    render();
+  });
+});
+
+// Build ladder of numbers 1..60
+function buildLadder(){
+  const ladder = document.getElementById('ladder');
+  let html = '';
+  for(let n = 1; n <= 60; n++){
+    const isPow2 = (n & (n-1)) === 0;
+    html += `<div class="lad-cell ${isPow2?'pow2':''}" data-n="${n}">${n}</div>`;
+  }
+  ladder.innerHTML = html;
+  ladder.querySelectorAll('.lad-cell').forEach(c => {
+    c.addEventListener('click', () => {
+      const n = +c.dataset.n;
+      // Find smallest staircase summing to n: try lengths 2..
+      let found = null;
+      for(let L = 2; L*(L-1)/2 < n; L++){
+        const numer = n - L*(L-1)/2;
+        if(numer > 0 && numer % L === 0){
+          found = { start: numer/L, length: L };
+          break;
+        }
+      }
+      if(found){
+        state.start = found.start;
+        state.length = found.length;
+        startInput.value = found.start;
+        lengthInput.value = found.length;
+        startVal.textContent = found.start;
+        lengthVal.textContent = found.length;
+        render();
+      } else {
+        // It's a power of 2 — flash but don't change
+        c.style.animation = 'none';
+        void c.offsetWidth;
+        c.style.animation = 'pulse-red 0.5s';
+      }
+    });
+  });
+}
+
+// Inject keyframe for pow-2 click feedback
+const styleEl = document.createElement('style');
+styleEl.textContent = `@keyframes pulse-red { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }`;
+document.head.appendChild(styleEl);
+
+function render(){
+  startVal.textContent = state.start;
+  lengthVal.textContent = state.length;
+  const { start, length, mode } = state;
+  const seq = Array.from({length}, (_,i) => start + i);
+  const sum = seq.reduce((a,b)=>a+b, 0);
+
+  // Render stage
+  const dot = 14;        // dot diameter
+  const gap = 5;         // gap between dots
+  const cell = dot + gap;
+  const padding = 20;
+
+  const maxDots = start + length - 1; // longest row in staircase
+  // For rectangle: dims are length × ((2·start + length − 1)/2)
+  // If length is even: rect is length/2 wide × (2·start + length − 1) tall (or pair-up version)
+  // We'll use the "pair the ends" rectangle: length rows × mean dots, where mean might be half-integer
+  // Cleaner: show two staircases joined into a rectangle of length × (2·start + length − 1)
+  // For "rectangle" mode, show this doubled rect + label "÷2"
+
+  let svgW, svgH, svgInner = '';
+  const COLOR = '#2c5f9e';
+  const COLOR_LIGHT = '#a8c2e0';
+
+  if(mode === 'stair'){
+    // Rows from bottom up: row i has (start+i) dots
+    svgW = maxDots * cell + 2*padding - gap + 50;
+    svgH = length * cell + 2*padding - gap + 20;
+    seq.forEach((count, i) => {
+      const y = padding + (length - 1 - i) * cell;
+      // Label on left
+      svgInner += `<text x="${padding - 8}" y="${y + dot/2 + 4}" text-anchor="end" font-family="DM Mono,monospace" font-size="13" font-weight="700" fill="${COLOR}">${count}</text>`;
+      for(let j = 0; j < count; j++){
+        const x = padding + 30 + j * cell;
+        svgInner += `<circle cx="${x + dot/2}" cy="${y + dot/2}" r="${dot/2}" fill="${COLOR}"/>`;
+      }
+    });
+    svgW = padding + 30 + maxDots * cell + padding;
+  } else {
+    // Rectangle: pair top of staircase with reverse → uniform rect of length × (start + start+length-1) = length × (2·start+length-1)
+    // We'll show the rect with two colors: original dots + the "mirror" dots that complete it
+    const rectW = (2*start + length - 1);  // dots per row
+    const rectH = length;
+    svgW = rectW * cell + 2*padding - gap + 50;
+    svgH = rectH * cell + 2*padding - gap + 30;
+    for(let i = 0; i < length; i++){
+      const y = padding + i * cell;
+      // i-th row of staircase (i=0 at top) has (start + length - 1 - i) dots — but stack with original orientation
+      // Original staircase row from bottom: count = start + i; in rect we lay it left.
+      const origCount = start + (length - 1 - i); // top row has most
+      const mirrorCount = rectW - origCount;
+      // Original dots (blue)
+      for(let j = 0; j < origCount; j++){
+        const x = padding + 30 + j * cell;
+        svgInner += `<circle cx="${x + dot/2}" cy="${y + dot/2}" r="${dot/2}" fill="${COLOR}"/>`;
+      }
+      // Mirror dots (lighter) — fills in the rectangle
+      for(let j = 0; j < mirrorCount; j++){
+        const x = padding + 30 + (origCount + j) * cell;
+        svgInner += `<circle cx="${x + dot/2}" cy="${y + dot/2}" r="${dot/2}" fill="${COLOR_LIGHT}"/>`;
+      }
+    }
+    // Annotation: dims
+    svgInner += `<text x="${padding + 30 + rectW * cell / 2 - gap/2}" y="${padding + rectH*cell + 18}" text-anchor="middle" font-family="DM Mono,monospace" font-size="12" fill="#5a5650" font-weight="600">${rectW} per row</text>`;
+    svgInner += `<text x="${padding + 18}" y="${padding + rectH*cell/2 - gap/2 + 4}" text-anchor="middle" font-family="DM Mono,monospace" font-size="12" fill="#5a5650" font-weight="600" transform="rotate(-90 ${padding + 18} ${padding + rectH*cell/2})">${rectH} rows</text>`;
+    svgW = padding + 30 + rectW * cell + padding;
+  }
+
+  document.getElementById('stage').innerHTML = `
+    <svg viewBox="0 0 ${svgW} ${svgH}" width="${Math.min(svgW, 820)}">${svgInner}</svg>
+  `;
+
+  // Render sum display
+  const sumDisp = document.getElementById('sum-display');
+  if(mode === 'stair'){
+    sumDisp.innerHTML = `
+      <span>${seq.join(' + ')}</span>
+      <span class="eq">=</span>
+      <span class="total">${sum}</span>
+    `;
+  } else {
+    const rectW = (2*start + length - 1);
+    sumDisp.innerHTML = `
+      <span>${length} × ${rectW}</span>
+      <span class="eq">÷ 2 =</span>
+      <span class="total">${sum}</span>
+    `;
+  }
+
+  // Update ladder highlights
+  document.querySelectorAll('.lad-cell').forEach(c => {
+    c.classList.toggle('cur-sum', +c.dataset.n === sum);
+  });
+}
+
+buildLadder();
+render();
+</script>
+</body>
+</html>
